@@ -1,5 +1,5 @@
 <?php
-function extension_install_softwareactivity()
+function extension_install_language()
 {
     $commonObject = new ExtensionCommon;
 
@@ -13,13 +13,13 @@ function extension_install_softwareactivity()
     );
 }
 
-function extension_delete_softwareactivity()
+function extension_delete_language()
 {
     $commonObject = new ExtensionCommon;
-    $commonObject -> sqlQuery("DROP TABLE IF EXISTS `softwareactivity`");
+    $commonObject -> sqlQuery("DROP TABLE IF EXISTS `language`");
 }
 
-function extension_upgrade_softwareactivity()
+function extension_upgrade_language()
 {
 
 }

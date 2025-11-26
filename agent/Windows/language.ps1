@@ -1,14 +1,7 @@
-# ---------------------------
-# Get current OS display language (always available)
-# ---------------------------
+$osLangTag = (Get-WinUserLanguageList)[0].LanguageTag
+$osLangEnglish = ([System.Globalization.CultureInfo]::GetCultureInfo($osLangTag)).EnglishName
 
-$osLang = (Get-WinUserLanguageList)[0].Autonym
-
-
-# ---------------------------
 # Get current active keyboard layout (not default)
-# ---------------------------
-
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -41,25 +34,15 @@ public class KeyboardLayoutReader {
 $langId = [KeyboardLayoutReader]::GetCurrentKeyboardLangId()
 
 if ($langId -lt 0) {
-    $keyboardLayout = "Unknown"
-}
-
-# Convert LANGID -> Culture using Win32 fallback (always works)
-try {
+    $keyboardLayoutEnglish = "Unknown"
+} else {
     $culture = [System.Globalization.CultureInfo]::GetCultureInfo($langId)
-} catch {
-    $culture = "Unknown"
+    $keyboardLayoutEnglish = $culture.EnglishName
 }
-
-$keyboardLayout = $culture.DisplayName
-
-# ---------------------------
-# Output
-# ---------------------------
 
 $xml = "<LANGUAGE>"
-$xml += "<OSLANG>$osLang</OSLANG>"
-$xml += "<KEYLAYOUT>$keyboardLayout</KEYLAYOUT>"
+$xml += "<OSLANG>$osLangEnglish</OSLANG>"
+$xml += "<KEYLAYOUT>$keyboardLayoutEnglish</KEYLAYOUT>"
 $xml += "</LANGUAGE>"
 
 Write-Output $xml
