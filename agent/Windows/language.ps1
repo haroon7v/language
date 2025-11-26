@@ -1,11 +1,7 @@
-# ------------------------------------------------------------
-# Get OS display language (English)
-# ------------------------------------------------------------
-$osLang = (Get-WinUserLanguageList)[0].EnglishName
+$osLangTag = (Get-WinUserLanguageList)[0].LanguageTag
+$osLangEnglish = ([System.Globalization.CultureInfo]::GetCultureInfo($osLangTag)).EnglishName
 
-# ------------------------------------------------------------
-# Add C# code to read active keyboard layout
-# ------------------------------------------------------------
+# Get current active keyboard layout (not default)
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -20,71 +16,36 @@ public class KeyboardLayoutReader {
     [DllImport("user32.dll")]
     public static extern IntPtr GetKeyboardLayout(uint idThread);
 
-    public static int GetCurrentKeyboardLayout() {
+    public static int GetCurrentKeyboardLangId() {
         IntPtr hWnd = GetForegroundWindow();
-        if (hWnd == IntPtr.Zero) return -1;
+        if (hWnd == IntPtr.Zero)
+            return -1;
 
         uint pid;
         uint tid = GetWindowThreadProcessId(hWnd, out pid);
+
         IntPtr hKL = GetKeyboardLayout(tid);
 
-        return hKL.ToInt32() & 0xFFFF; // LANGID (low word)
+        return (int)hKL & 0xFFFF; // LANGID
     }
 }
 "@
 
+$langId = [KeyboardLayoutReader]::GetCurrentKeyboardLangId()
 
-# ------------------------------------------------------------
-# Impersonate the active console user
-# ------------------------------------------------------------
-Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-
-public class TokenUtil {
-    [DllImport("wtsapi32.dll", SetLastError = true)]
-    public static extern bool WTSQueryUserToken(uint sessionId, out IntPtr Token);
-
-    [DllImport("advapi32.dll", SetLastError = true)]
-    public static extern bool ImpersonateLoggedOnUser(IntPtr token);
-
-    [DllImport("advapi32.dll", SetLastError = true)]
-    public static extern bool RevertToSelf();
-}
-"@
-
-
-# Get active session ID (console user)
-$sessionId = (Get-Process -Name explorer -ErrorAction SilentlyContinue).SessionId
-
-# Get and impersonate the logged‑in user token
-$token = [IntPtr]::Zero
-[TokenUtil]::WTSQueryUserToken([uint32]$sessionId, [ref]$token) | Out-Null
-
-if ($token -ne [IntPtr]::Zero) {
-    [TokenUtil]::ImpersonateLoggedOnUser($token) | Out-Null
+if ($langId -lt 0) {
+    $keyboardLayoutEnglish = "Unknown"
 }
 
-# ------------------------------------------------------------
-# Get ACTIVE keyboard layout (English name)
-# ------------------------------------------------------------
-$langId = [KeyboardLayoutReader]::GetCurrentKeyboardLayout()
-
-if ($langId -gt 0) {
-    $keyboardLayout = (New-Object System.Globalization.CultureInfo($langId)).EnglishName
-} else {
-    $keyboardLayout = ""
+# Convert LANGID to English culture name
+if ($langId -ge 0) {
+    $culture = [System.Globalization.CultureInfo]::GetCultureInfo($langId)
+    $keyboardLayoutEnglish = $culture.EnglishName
 }
 
-# Stop impersonation
-[TokenUtil]::RevertToSelf() | Out-Null
-
-# ------------------------------------------------------------
-# OUTPUT
-# ------------------------------------------------------------
 $xml = "<LANGUAGE>"
-$xml += "<OSLANG>$osLang</OSLANG>"
-$xml += "<KEYLAYOUT>$keyboardLayout</KEYLAYOUT>"
+$xml += "<OSLANG>$osLangEnglish</OSLANG>"
+$xml += "<KEYLAYOUT>$keyboardLayoutEnglish</KEYLAYOUT>"
 $xml += "</LANGUAGE>"
 
 Write-Output $xml
