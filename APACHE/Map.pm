@@ -11,9 +11,6 @@ $DATA_MAP{language} = {
    sortBy => 'ID',
    writeDiff => 0,
    cache => 0,
-   fields => {
-      OSLANG => {},
-      KEYLAYOUT => {}
-   }
+   fields => {}
 };
 1;

@@ -4,19 +4,27 @@ function extension_install_language()
     $commonObject = new ExtensionCommon;
 
     $commonObject -> sqlQuery(
-        "CREATE TABLE `language` (
-        ID INTEGER NOT NULL AUTO_INCREMENT, 
-        HARDWARE_ID INTEGER NOT NULL,
-        OSLANG VARCHAR(255) DEFAULT NULL,
-        KEYLAYOUT VARCHAR(255) DEFAULT NULL,
-        PRIMARY KEY (ID,HARDWARE_ID)) ENGINE=INNODB;"
+        "ALTER TABLE `hardware`
+        ADD COLUMN `OSLANG` VARCHAR(255) DEFAULT NULL;"
+    );
+
+    $commonObject -> sqlQuery(
+        "ALTER TABLE `hardware`
+        ADD COLUMN `KEYLAYOUT` VARCHAR(255) DEFAULT NULL;"
     );
 }
 
 function extension_delete_language()
 {
     $commonObject = new ExtensionCommon;
-    $commonObject -> sqlQuery("DROP TABLE IF EXISTS `language`");
+    $commonObject -> sqlQuery(
+        "ALTER TABLE `hardware`
+        DROP COLUMN `OSLANG`;"
+    );
+    $commonObject -> sqlQuery(
+        "ALTER TABLE `hardware`
+        DROP COLUMN `KEYLAYOUT`;"
+    );
 }
 
 function extension_upgrade_language()
