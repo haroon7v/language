@@ -1,1 +1,1 @@
-Language
+Detects OS Language Settings
